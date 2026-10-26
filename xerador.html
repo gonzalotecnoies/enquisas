@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="gl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Xerador de formularios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Ferramenta docente: pasos á esquerda, panel de estado e descargas fixo á dereita */
+:root{
+  --paper:#eef1fb; --dot:#d3d9f3; --card:#ffffff; --ink:#14183a; --muted:#565d8a; --line:#c9cfeb;
+  --edge:#14183a; --shadow:#14183a; --pri:#3557ff; --pri-ink:#ffffff; --soft:#e2e7ff;
+  --sun:#ffd23f; --coral:#ff6b57; --mint:#22c99a; --ok:#11895f; --warn:#b35c00; --err:#d6334a;
+  --fd:'Bricolage Grotesque','Arial Black',system-ui,sans-serif;
+  --fb:'Figtree',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --fm:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0d1024; --dot:#1c2247; --card:#181d3b; --ink:#eef0ff; --muted:#a6acd6; --line:#323a6e;
+  --edge:#4a5394; --shadow:#03040c; --pri:#7088ff; --pri-ink:#0d1024; --soft:#252c5a;
+  --sun:#ffd23f; --coral:#ff8a78; --mint:#3be0b0; --ok:#4fe0a8; --warn:#ffb35c; --err:#ff7d8f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0d1024; --dot:#1c2247; --card:#181d3b; --ink:#eef0ff; --muted:#a6acd6; --line:#323a6e;
+  --edge:#4a5394; --shadow:#03040c; --pri:#7088ff; --pri-ink:#0d1024; --soft:#252c5a;
+  --sun:#ffd23f; --coral:#ff8a78; --mint:#3be0b0; --ok:#4fe0a8; --warn:#ffb35c; --err:#ff7d8f; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--paper);background-image:radial-gradient(var(--dot) 1.4px,transparent 1.6px);background-size:22px 22px;
+  color:var(--ink);font-family:var(--fb);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:max(24px,env(safe-area-inset-top,0px)) max(40px,env(safe-area-inset-bottom,0px))}
+h1,h2,h3{font-family:var(--fd);font-weight:800;line-height:1.12;margin:0;text-wrap:balance}
+h1{font-size:clamp(30px,5vw,46px)} h2{font-size:22px} h3{font-size:17px}
+p{margin:0}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:26px}
+header{display:flex;flex-direction:column;gap:8px;max-width:760px}
+header .lead{color:var(--muted);font-size:17px}
+.mark{display:inline-block;background:var(--sun);color:#1b1a10;border:2.5px solid var(--edge);border-radius:12px;padding:0 .25em;transform:rotate(-1.5deg)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:26px;align-items:start}
+@media (max-width:920px){.layout{grid-template-columns:minmax(0,1fr)}}
+.steps{display:flex;flex-direction:column;gap:22px;min-width:0}
+
+.card{background:var(--card);border:2.5px solid var(--edge);border-radius:22px;box-shadow:5px 5px 0 var(--shadow);padding:24px;display:flex;flex-direction:column;gap:18px;min-width:0}
+.sh{display:flex;gap:14px;align-items:center}
+.sn{flex:none;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-family:var(--fd);font-weight:800;font-size:18px;border:2.5px solid var(--edge);color:#14183a}
+.s1 .sn{background:var(--sun)} .s2 .sn{background:var(--coral)} .s3 .sn{background:var(--mint)} .s4 .sn{background:var(--soft);color:var(--ink)}
+.sh p{color:var(--muted);font-size:14px}
+
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.fields .full{grid-column:1/-1}
+@media (max-width:620px){.fields{grid-template-columns:1fr}}
+.f{display:flex;flex-direction:column;gap:6px;min-width:0}
+.f label{font-weight:700;font-size:15px}
+.f small{color:var(--muted);font-size:13px}
+input[type=text],input[type=url],input[type=number],textarea{font:inherit;color:var(--ink);background:var(--paper);border:2px solid var(--edge);border-radius:12px;padding:10px 12px;width:100%;min-width:0}
+input.mono{font-family:var(--fm);font-size:14px}
+textarea{font-family:var(--fm);font-size:13px;min-height:180px;resize:vertical}
+input:focus-visible,textarea:focus-visible,button:focus-visible,.drop:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+input[type=number]{font-family:var(--fd);font-weight:800;font-size:28px;text-align:center;padding:8px;font-variant-numeric:tabular-nums}
+
+.drop{border:2.5px dashed var(--edge);border-radius:18px;padding:26px 18px;text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center;cursor:pointer;background:var(--paper)}
+.drop.over{background:var(--soft)}
+.drop svg{width:34px;height:34px}
+.drop b{font-family:var(--fd);font-size:18px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{font:inherit;font-family:var(--fd);font-weight:800;font-size:16px;padding:10px 18px;border-radius:14px;cursor:pointer;
+  border:2.5px solid var(--edge);background:var(--pri);color:var(--pri-ink);box-shadow:3px 3px 0 var(--shadow);
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;text-align:center}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--shadow)}
+.btn.ghost{background:var(--card);color:var(--ink)}
+.btn.sm{font-size:14px;padding:7px 12px;border-radius:11px}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:3px 3px 0 var(--shadow)}
+.btn svg{width:18px;height:18px;flex:none}
+.link{font:inherit;font-weight:700;font-size:14px;color:var(--pri);background:none;border:0;padding:2px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+.nums{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.nums .f{background:var(--paper);border:2px solid var(--line);border-radius:16px;padding:14px}
+.parsed{font-size:14px;color:var(--muted)}
+.parsed b{color:var(--ink)}
+.warns{font-size:14px;color:var(--warn);display:flex;flex-direction:column;gap:2px}
+
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.counter{font-family:var(--fd);font-weight:800;font-size:16px;padding:6px 12px;border-radius:999px;border:2px solid var(--edge);font-variant-numeric:tabular-nums}
+.counter.okc{background:var(--mint);color:#08251c}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.qi{border:2px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;transition:border-color .15s,background .15s}
+.qi.on{border-color:var(--edge);background:var(--soft)}
+.qi.off{opacity:.55}
+.qi .qt{display:flex;gap:12px;align-items:flex-start;cursor:pointer;font-weight:700}
+.qi .qt span{min-width:0;overflow-wrap:anywhere}
+.qi .qt .qn{font-family:var(--fd);color:var(--muted);flex:none;width:2.4em}
+.qi .ops{display:flex;flex-direction:column;gap:6px;padding-left:calc(2.4em + 32px)}
+.qi .op{display:flex;gap:10px;align-items:flex-start;font-size:15px;cursor:pointer}
+.qi .op span{min-width:0;overflow-wrap:anywhere}
+.qi .op .lt{font-family:var(--fm);color:var(--muted);flex:none}
+.qi .note{font-size:13px;color:var(--warn);padding-left:calc(2.4em + 32px)}
+.qi input[type=checkbox]{width:20px;height:20px;flex:none;accent-color:var(--pri);margin:2px 0 0}
+.qi .opn{font-size:13px;color:var(--muted);padding-left:calc(2.4em + 32px);font-variant-numeric:tabular-nums}
+@media (max-width:520px){.qi .ops,.qi .note,.qi .opn{padding-left:8px}}
+.vacio{color:var(--muted);font-style:italic}
+
+aside{position:sticky;top:max(16px,env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:18px}
+@media (max-width:920px){aside{position:static}}
+.check{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.check li{display:flex;gap:10px;align-items:flex-start;font-size:15px}
+.check li i{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--edge);display:grid;place-items:center;font-style:normal;font-weight:800;font-size:13px;margin-top:1px}
+.check li.ok i{background:var(--mint);color:#08251c}
+.check li.warn i{background:var(--sun);color:#1b1a10}
+.check li.bad i{background:var(--card);color:var(--err)}
+.check li span{min-width:0}
+.dl{display:flex;flex-direction:column;gap:10px}
+.dl .btn{width:100%}
+.dl .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.small{font-size:13px;color:var(--muted)}
+.code{font-family:var(--fm);font-size:13px;background:var(--paper);border:2px solid var(--line);border-radius:10px;padding:2px 6px;overflow-wrap:anywhere}
+.toast{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--card);font-weight:700;padding:10px 18px;border-radius:999px;box-shadow:3px 3px 0 var(--shadow);max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Xerador de <span class="mark">formularios</span></h1>
+    <p class="lead">Carga un arquivo de preguntas, escolle cales entran e descarga dúas páxinas: o formulario anónimo para o alumnado e a páxina de resultados con gráficos.</p>
+  </header>
+
+  <div class="layout">
+    <div class="steps">
+
+      <section class="card s1">
+        <div class="sh"><span class="sn">1</span><div><h2>Datos do formulario</h2><p>Aparecen no formulario e na folla de cálculo.</p></div></div>
+        <div class="fields">
+          <div class="f full"><label for="titulo">Título que verá o alumnado</label>
+            <input type="text" id="titulo" maxlength="120" placeholder="Por exemplo: Como usamos a tecnoloxía?"></div>
+          <div class="f"><label for="ident">Nome da pestana na folla</label>
+            <input type="text" id="ident" class="mono" maxlength="40" placeholder="tecnoloxia-2a">
+            <small>Cada formulario garda os datos na súa propia pestana. Úsao tamén para nomear os arquivos.</small></div>
+          <div class="f"><label for="grupos">Grupos (separados por comas)</label>
+            <input type="text" id="grupos" placeholder="2.º A, 2.º B, 2.º C">
+            <small>O alumnado escolle o seu grupo ao comezar. Déixao baleiro para non preguntalo.</small></div>
+          <div class="f full"><label for="url">Enderezo do script de Google (remata en /exec)</label>
+            <input type="url" id="url" class="mono" placeholder="https://script.google.com/macros/s/…/exec">
+            <small>Sen enderezo xéranse páxinas en modo proba, útiles para ensinalas antes de conectar a folla.</small></div>
+        </div>
+      </section>
+
+      <section class="card s2">
+        <div class="sh"><span class="sn">2</span><div><h2>Arquivo de preguntas</h2><p>Texto plano en formato AIKEN, sen resposta correcta.</p></div></div>
+        <div class="drop" id="drop" tabindex="0" role="button" aria-label="Escoller arquivo de texto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 18v-6M9 15l3-3 3 3"/></svg>
+          <b>Arrastra aquí o .txt ou preme para escollelo</b>
+          <span class="small" id="arq-nome">Ningún arquivo cargado</span>
+        </div>
+        <input type="file" id="arquivo" accept=".txt,text/plain" hidden>
+        <div class="row">
+          <button class="link" type="button" id="b-exemplo">Usar as preguntas de exemplo</button>
+          <span class="small">·</span>
+          <button class="link" type="button" id="b-baixar-ex">Descargar o exemplo .txt</button>
+          <span class="small">·</span>
+          <button class="link" type="button" id="b-pegar">Pegar o texto directamente</button>
+        </div>
+        <div class="f" id="pegar-box" hidden>
+          <label for="texto">Texto das preguntas</label>
+          <textarea id="texto" spellcheck="false" placeholder="Pregunta?&#10;A. Primeira opción&#10;B. Segunda opción&#10;&#10;Outra pregunta?&#10;A. …"></textarea>
+        </div>
+        <p class="parsed" id="parsed"></p>
+        <div class="warns" id="warns"></div>
+      </section>
+
+      <section class="card s3">
+        <div class="sh"><span class="sn">3</span><div><h2>Cantas preguntas e opcións?</h2><p>As mesmas opcións en todas as preguntas, para que os gráficos sexan comparables.</p></div></div>
+        <div class="nums">
+          <div class="f"><label for="nPreg">Número de preguntas</label><input type="number" id="nPreg" min="1" max="50" value="5"></div>
+          <div class="f"><label for="nOpc">Opcións por pregunta</label><input type="number" id="nOpc" min="2" max="10" value="4"></div>
+        </div>
+      </section>
+
+      <section class="card s4">
+        <div class="sh"><span class="sn">4</span><div><h2>Marca as preguntas e as opcións</h2><p>Ao marcar unha pregunta quedan escollidas as primeiras opcións. Podes cambialas.</p></div></div>
+        <div class="tools">
+          <span class="counter" id="counter">0 / 5 preguntas</span>
+          <div class="row"><button class="btn ghost sm" type="button" id="b-primeiras">Marcar as primeiras</button>
+          <button class="btn ghost sm" type="button" id="b-limpar">Desmarcar todo</button></div>
+        </div>
+        <ul class="list" id="lista"><li class="vacio">Carga un arquivo no paso 2 para ver aquí as preguntas.</li></ul>
+      </section>
+    </div>
+
+    <aside>
+      <section class="card">
+        <h2>Listo para xerar?</h2>
+        <ul class="check" id="check"></ul>
+        <div class="dl">
+          <button class="btn" type="button" id="b-form"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Descargar formulario</button>
+          <button class="btn" type="button" id="b-res"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Descargar resultados</button>
+          <div class="pair">
+            <button class="btn ghost sm" type="button" id="v-form">Ver formulario</button>
+            <button class="btn ghost sm" type="button" id="v-res">Ver resultados</button>
+          </div>
+          <p class="small" id="nomes"></p>
+        </div>
+      </section>
+      <section class="card">
+        <h3>Despois de descargar</h3>
+        <p class="small">Sube os dous arquivos ao teu repositorio de GitHub Pages e comparte co alumnado só a ligazón do formulario. A guía explica cada paso.</p>
+      </section>
+    </aside>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+window.PLANTILLAS = {"formulario": "\u003c!doctype html>\n\u003chtml lang=\"gl\">\n\u003chead>\n\u003cmeta charset=\"utf-8\">\n\u003cmeta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n\u003ctitle>{{TITULO}}\u003c/title>\n\u003clink rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n\u003clink rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n\u003clink rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;700&display=swap\">\n\u003cstyle>\n/* Deseño: unha pregunta por pantalla, tarxetas grosas con sombra dura tipo \"adhesivo\" */\n:root{\n  --paper:#eef1fb; --dot:#d3d9f3; --card:#ffffff; --ink:#14183a; --muted:#565d8a;\n  --edge:#14183a; --shadow:#14183a; --pri:#3557ff; --pri-ink:#ffffff; --soft:#e2e7ff;\n  --sun:#ffd23f; --coral:#ff6b57; --mint:#22c99a; --lila:#b79bff; --err:#d6334a;\n  --fd:'Bricolage Grotesque','Arial Black',system-ui,sans-serif;\n  --fb:'Figtree',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;\n  color-scheme:light;\n}\n@media (prefers-color-scheme:dark){:root:not([data-theme=\"light\"]){\n  --paper:#0d1024; --dot:#1c2247; --card:#181d3b; --ink:#eef0ff; --muted:#a6acd6;\n  --edge:#4a5394; --shadow:#03040c; --pri:#7088ff; --pri-ink:#0d1024; --soft:#252c5a;\n  --sun:#ffd23f; --coral:#ff8a78; --mint:#3be0b0; --lila:#c4adff; --err:#ff7d8f; color-scheme:dark}}\n:root[data-theme=\"dark\"]{\n  --paper:#0d1024; --dot:#1c2247; --card:#181d3b; --ink:#eef0ff; --muted:#a6acd6;\n  --edge:#4a5394; --shadow:#03040c; --pri:#7088ff; --pri-ink:#0d1024; --soft:#252c5a;\n  --sun:#ffd23f; --coral:#ff8a78; --mint:#3be0b0; --lila:#c4adff; --err:#ff7d8f; color-scheme:dark}\n\n*{box-sizing:border-box}\n[hidden]{display:none!important}\nhtml,body{margin:0;min-height:100%}\nbody{\n  background:var(--paper);\n  background-image:radial-gradient(var(--dot) 1.4px,transparent 1.6px);\n  background-size:22px 22px;\n  color:var(--ink);font-family:var(--fb);font-size:17px;line-height:1.5;\n  padding-left:max(16px,env(safe-area-inset-left,0px));\n  padding-right:max(16px,env(safe-area-inset-right,0px));\n  padding-block:max(16px,env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-bottom,0px));\n}\n.app{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:20px}\n.top{display:flex;align-items:center;gap:12px;min-height:40px}\n.badge{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:14px;\n  padding:6px 12px;border-radius:999px;background:var(--mint);color:#08251c;border:2px solid var(--edge)}\n.badge svg{width:15px;height:15px}\n.progress{flex:1;height:14px;border-radius:999px;border:2px solid var(--edge);background:var(--card);overflow:hidden}\n.progress i{display:block;height:100%;width:0;background:var(--sun);transition:width .35s ease}\n.count{font-family:var(--fd);font-weight:800;font-size:15px;font-variant-numeric:tabular-nums;min-width:3.2em;text-align:right}\n\n.demo{font-size:14px;padding:10px 14px;border-radius:12px;border:2px dashed var(--edge);background:var(--card);color:var(--muted)}\n\n.card{background:var(--card);border:2.5px solid var(--edge);border-radius:24px;\n  box-shadow:6px 6px 0 var(--shadow);padding:28px 24px;display:flex;flex-direction:column;gap:20px}\n.kicker{font-family:var(--fd);font-weight:600;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0}\nh1,h2{font-family:var(--fd);font-weight:800;line-height:1.1;margin:0;text-wrap:balance}\nh1{font-size:clamp(30px,7vw,44px)}\nh2{font-size:clamp(23px,5.2vw,30px)}\np{margin:0}\n.lead{color:var(--muted);font-size:17px}\n.hl{background:var(--sun);color:#1b1a10;padding:0 .25em;border-radius:6px;box-decoration-break:clone;-webkit-box-decoration-break:clone}\n\n.chips{display:flex;flex-wrap:wrap;gap:10px}\n.chip{font:inherit;font-weight:700;font-size:16px;padding:10px 18px;border-radius:999px;cursor:pointer;\n  border:2.5px solid var(--edge);background:var(--card);color:var(--ink);box-shadow:3px 3px 0 var(--shadow);transition:transform .12s,box-shadow .12s}\n.chip[aria-pressed=\"true\"]{background:var(--pri);color:var(--pri-ink);transform:translate(2px,2px);box-shadow:1px 1px 0 var(--shadow)}\n\n.opts{display:flex;flex-direction:column;gap:12px;margin:0;padding:0;list-style:none}\n.opt{width:100%;display:flex;align-items:center;gap:14px;text-align:left;font:inherit;font-weight:500;font-size:17px;\n  color:var(--ink);background:var(--card);border:2.5px solid var(--edge);border-radius:18px;padding:12px 16px 12px 12px;\n  cursor:pointer;box-shadow:4px 4px 0 var(--shadow);transition:transform .12s,box-shadow .12s,background .12s}\n.opt:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--shadow)}\n.opt .l{flex:none;width:40px;height:40px;border-radius:12px;border:2px solid var(--edge);display:grid;place-items:center;\n  font-family:var(--fd);font-weight:800;font-size:18px;color:#14183a}\n.opt:nth-child(5n+1) .l{background:var(--sun)} .opt:nth-child(5n+2) .l{background:var(--coral)}\n.opt:nth-child(5n+3) .l{background:var(--mint)} .opt:nth-child(5n+4) .l{background:var(--lila)}\n.opt:nth-child(5n+5) .l{background:var(--soft);color:var(--ink)}\n.opt .t{min-width:0;overflow-wrap:anywhere}\n.opt[aria-checked=\"true\"]{background:var(--pri);color:var(--pri-ink);transform:translate(3px,3px);box-shadow:1px 1px 0 var(--shadow)}\n.opt[aria-checked=\"true\"] .l{background:var(--card);color:var(--ink)}\n\n.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}\n.row .sp{flex:1}\n.btn{font:inherit;font-family:var(--fd);font-weight:800;font-size:18px;padding:13px 24px;border-radius:16px;cursor:pointer;\n  border:2.5px solid var(--edge);background:var(--pri);color:var(--pri-ink);box-shadow:4px 4px 0 var(--shadow);\n  display:inline-flex;align-items:center;gap:10px;transition:transform .12s,box-shadow .12s}\n.btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--shadow)}\n.btn.ghost{background:var(--card);color:var(--ink)}\n.btn.big{width:100%;justify-content:center;font-size:20px;padding:16px}\n.btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:4px 4px 0 var(--shadow);transform:none}\n.btn svg{width:20px;height:20px}\nbutton:focus-visible{outline:3px solid var(--sun);outline-offset:3px}\n\n.hint{font-size:14px;color:var(--muted)}\n.review{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}\n.review li{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:2px solid var(--edge);border-radius:14px}\n.review .n{font-family:var(--fd);font-weight:800;color:var(--muted);flex:none;width:2.2em}\n.review .q{font-size:15px;color:var(--muted)}\n.review .a{font-weight:700}\n.review .tx{flex:1;min-width:0;overflow-wrap:anywhere}\n.link{font:inherit;font-size:14px;font-weight:700;color:var(--pri);background:none;border:0;padding:4px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}\n.err{color:var(--err);font-weight:700;font-size:15px}\n\n.done{align-items:center;text-align:center}\n.burst{width:120px;height:120px}\n.burst .ray{transform-origin:60px 60px;animation:pop .7s cubic-bezier(.2,1.4,.4,1) both}\n@keyframes pop{from{transform:scale(.2) rotate(-30deg);opacity:0}to{transform:none;opacity:1}}\n.spin{width:20px;height:20px;border:3px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite}\n@keyframes sp{to{transform:rotate(360deg)}}\n.enter{animation:in .28s ease both}\n@keyframes in{from{opacity:.0;transform:translateY(10px)}to{opacity:1;transform:none}}\n@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}\n@media (max-width:420px){.card{padding:22px 18px;border-radius:20px}.opt{font-size:16px}}\n\u003c/style>\n\u003c/head>\n\u003cbody>\n\u003cmain class=\"app\">\n  \u003cdiv class=\"top\">\n    \u003cspan class=\"badge\">\u003csvg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">\u003crect x=\"4\" y=\"11\" width=\"16\" height=\"10\" rx=\"2\"/>\u003cpath d=\"M8 11V7a4 4 0 0 1 8 0v4\"/>\u003c/svg>Anónimo\u003c/span>\n    \u003cdiv class=\"progress\" role=\"progressbar\" aria-label=\"Progreso\" aria-valuemin=\"0\" aria-valuemax=\"100\">\u003ci id=\"bar\">\u003c/i>\u003c/div>\n    \u003cspan class=\"count\" id=\"count\">\u003c/span>\n  \u003c/div>\n\n  \u003cp class=\"demo\" id=\"demo\" hidden>Modo proba: este formulario aínda non está conectado á folla de cálculo, así que as respostas non se gardan.\u003c/p>\n\n  \u003c!-- Inicio -->\n  \u003csection class=\"card screen enter\" id=\"s-inicio\">\n    \u003cp class=\"kicker\">Enquisa da aula\u003c/p>\n    \u003ch1 id=\"titulo\">\u003c/h1>\n    \u003cp class=\"lead\">Non che imos pedir o nome nin o correo. \u003cspan class=\"hl\">Ninguén pode saber que respostas son as túas\u003c/span>, así que contesta con sinceridade.\u003c/p>\n    \u003cdiv id=\"grupo-box\" style=\"display:flex;flex-direction:column;gap:12px\">\n      \u003cp style=\"font-weight:700\">Primeiro, cal é o teu grupo?\u003c/p>\n      \u003cdiv class=\"chips\" id=\"grupos\" role=\"group\" aria-label=\"Grupo\">\u003c/div>\n    \u003c/div>\n    \u003cp class=\"hint\" id=\"info-n\">\u003c/p>\n    \u003cbutton class=\"btn big\" id=\"b-comezar\" disabled>Comezar\n      \u003csvg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">\u003cpath d=\"M5 12h14M13 6l6 6-6 6\"/>\u003c/svg>\u003c/button>\n  \u003c/section>\n\n  \u003c!-- Pregunta -->\n  \u003csection class=\"card screen\" id=\"s-preg\" hidden>\n    \u003cp class=\"kicker\" id=\"p-kicker\">\u003c/p>\n    \u003ch2 id=\"p-texto\">\u003c/h2>\n    \u003cul class=\"opts\" id=\"p-opts\" role=\"radiogroup\">\u003c/ul>\n    \u003cdiv class=\"row\">\n      \u003cbutton class=\"btn ghost\" id=\"b-atras\">\n        \u003csvg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">\u003cpath d=\"M19 12H5M11 6l-6 6 6 6\"/>\u003c/svg>\u003cspan id=\"t-atras\">Atrás\u003c/span>\u003c/button>\n      \u003cspan class=\"sp\">\u003c/span>\n      \u003cbutton class=\"btn\" id=\"b-seguinte\" disabled>\u003cspan id=\"t-seg\">Seguinte\u003c/span>\n        \u003csvg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">\u003cpath d=\"M5 12h14M13 6l6 6-6 6\"/>\u003c/svg>\u003c/button>\n    \u003c/div>\n  \u003c/section>\n\n  \u003c!-- Revisar -->\n  \u003csection class=\"card screen\" id=\"s-revisar\" hidden>\n    \u003cp class=\"kicker\">Último paso\u003c/p>\n    \u003ch2>Revisa as túas respostas\u003c/h2>\n    \u003cul class=\"review\" id=\"rev\">\u003c/ul>\n    \u003cp class=\"err\" id=\"erro\" role=\"alert\" hidden>\u003c/p>\n    \u003cbutton class=\"btn big\" id=\"b-enviar\">Enviar respostas\u003c/button>\n  \u003c/section>\n\n  \u003c!-- Fin -->\n  \u003csection class=\"card screen done\" id=\"s-fin\" hidden>\n    \u003csvg class=\"burst\" viewBox=\"0 0 120 120\" aria-hidden=\"true\">\n      \u003cg class=\"ray\">\u003ccircle cx=\"60\" cy=\"60\" r=\"34\" fill=\"var(--sun)\" stroke=\"var(--edge)\" stroke-width=\"3\"/>\n      \u003cpath d=\"M45 61l10 10 21-23\" fill=\"none\" stroke=\"#14183a\" stroke-width=\"7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\u003c/g>\n      \u003cg class=\"ray\" style=\"animation-delay:.12s\" stroke=\"var(--edge)\" stroke-width=\"3\">\n        \u003ccircle cx=\"18\" cy=\"26\" r=\"7\" fill=\"var(--coral)\"/>\u003ccircle cx=\"104\" cy=\"22\" r=\"6\" fill=\"var(--mint)\"/>\n        \u003ccircle cx=\"106\" cy=\"94\" r=\"8\" fill=\"var(--lila)\"/>\u003ccircle cx=\"14\" cy=\"96\" r=\"5\" fill=\"var(--pri)\"/>\u003c/g>\n    \u003c/svg>\n    \u003ch1>Grazas!\u003c/h1>\n    \u003cp class=\"lead\">As túas respostas gardáronse sen ningún dato persoal.\u003c/p>\n    \u003cbutton class=\"btn ghost\" id=\"b-novo\">Nova resposta (seguinte persoa)\u003c/button>\n  \u003c/section>\n\u003c/main>\n\n\u003cscript>\nconst CFG = /*CONFIG*/{\"titulo\":\"Como usamos a tecnoloxía?\",\"id\":\"exemplo\",\"url\":\"\",\"grupos\":[\"2.º A\",\"2.º B\"],\"preguntas\":[{\"texto\":\"Cantas horas ao día usas o móbil?\",\"opcions\":[\"Menos de 1 hora\",\"Entre 1 e 3 horas\",\"Entre 3 e 5 horas\",\"Máis de 5 horas\"]},{\"texto\":\"Para que usas máis internet?\",\"opcions\":[\"Redes sociais\",\"Videoxogos\",\"Ver vídeos ou series\",\"Facer deberes\"]}]}/*FIN*/;\n\nconst $ = s => document.querySelector(s);\nconst N = CFG.preguntas.length;\nconst LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';\nlet grupo = '', resp = [], i = 0, editando = false, avance = null;\n\ndocument.title = CFG.titulo;\n$('#titulo').textContent = CFG.titulo;\n$('#demo').hidden = !!CFG.url;\n$('#info-n').textContent = N + (N === 1 ? ' pregunta' : ' preguntas') + ' · unha resposta en cada unha · uns ' + Math.max(1, Math.round(N * 0.3)) + ' min';\n\n// Grupos\nconst gbox = $('#grupos');\nif (!CFG.grupos || !CFG.grupos.length) { $('#grupo-box').hidden = true; }\nCFG.grupos.forEach(g => {\n  const b = document.createElement('button');\n  b.type = 'button'; b.className = 'chip'; b.textContent = g; b.setAttribute('aria-pressed', 'false');\n  b.onclick = () => { grupo = g; gbox.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', c === b)); comprobarInicio(); };\n  gbox.appendChild(b);\n});\nfunction comprobarInicio(){ $('#b-comezar').disabled = CFG.grupos.length > 0 && !grupo; }\n\nfunction amosar(id){\n  document.querySelectorAll('.screen').forEach(s => { const on = s.id === 's-' + id; s.hidden = !on; if (on){ s.classList.remove('enter'); void s.offsetWidth; s.classList.add('enter'); } });\n  actualizarBarra(id);\n  window.scrollTo({top:0});\n}\nfunction actualizarBarra(id){\n  const feitas = resp.filter(r => r !== null).length;\n  const pct = id === 'fin' ? 100 : id === 'inicio' ? 0 : Math.round(feitas / N * 100);\n  $('#bar').style.width = pct + '%';\n  document.querySelector('.progress').setAttribute('aria-valuenow', pct);\n  $('#count').textContent = id === 'preg' ? (i + 1) + '/' + N : id === 'inicio' ? '' : feitas + '/' + N;\n}\n\nfunction reiniciar(){\n  grupo = ''; resp = Array(N).fill(null); i = 0; editando = false;\n  gbox.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', 'false'));\n  comprobarInicio(); $('#erro').hidden = true;\n  amosar('inicio');\n}\n\nfunction pintarPregunta(){\n  clearTimeout(avance);\n  const p = CFG.preguntas[i];\n  $('#p-kicker').textContent = 'Pregunta ' + (i + 1) + ' de ' + N;\n  $('#p-texto').textContent = p.texto;\n  const ul = $('#p-opts'); ul.innerHTML = '';\n  ul.setAttribute('aria-labelledby', 'p-texto');\n  p.opcions.forEach((o, k) => {\n    const li = document.createElement('li');\n    li.className = 'opt'; li.setAttribute('role', 'radio'); li.tabIndex = 0;\n    li.setAttribute('aria-checked', resp[i] === o);\n    li.innerHTML = '\u003cspan class=\"l\">\u003c/span>\u003cspan class=\"t\">\u003c/span>';\n    li.querySelector('.l').textContent = LETRAS[k];\n    li.querySelector('.t').textContent = o;\n    li.onclick = () => escoller(o);\n    li.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); escoller(o); } };\n    ul.appendChild(li);\n  });\n  $('#b-seguinte').disabled = resp[i] === null;\n  $('#t-seg').textContent = (i === N - 1 || editando) ? 'Revisar' : 'Seguinte';\n  $('#t-atras').textContent = editando ? 'Volver' : i === 0 ? 'Inicio' : 'Atrás';\n  amosar('preg');\n}\nfunction escoller(o){\n  resp[i] = o;\n  document.querySelectorAll('#p-opts .opt').forEach(li => li.setAttribute('aria-checked', li.querySelector('.t').textContent === o));\n  $('#b-seguinte').disabled = false;\n  actualizarBarra('preg');\n  clearTimeout(avance);\n  avance = setTimeout(seguinte, 420);\n}\nfunction seguinte(){\n  clearTimeout(avance);\n  if (resp[i] === null) return;\n  if (editando || i === N - 1) { editando = false; pintarRevisar(); }\n  else { i++; pintarPregunta(); }\n}\nfunction pintarRevisar(){\n  const ul = $('#rev'); ul.innerHTML = '';\n  CFG.preguntas.forEach((p, k) => {\n    const li = document.createElement('li');\n    li.innerHTML = '\u003cspan class=\"n\">\u003c/span>\u003cdiv class=\"tx\">\u003cp class=\"q\">\u003c/p>\u003cp class=\"a\">\u003c/p>\u003c/div>\u003cbutton class=\"link\" type=\"button\">Cambiar\u003c/button>';\n    li.querySelector('.n').textContent = 'P' + (k + 1);\n    li.querySelector('.q').textContent = p.texto;\n    li.querySelector('.a').textContent = resp[k];\n    li.querySelector('button').onclick = () => { i = k; editando = true; pintarPregunta(); };\n    ul.appendChild(li);\n  });\n  amosar('revisar');\n}\n\ndocument.addEventListener('keydown', e => {\n  if ($('#s-preg').hidden || e.ctrlKey || e.metaKey || e.altKey) return;\n  const k = LETRAS.indexOf(e.key.toUpperCase());\n  const n = parseInt(e.key, 10);\n  const idx = k >= 0 ? k : (n >= 1 ? n - 1 : -1);\n  const ops = CFG.preguntas[i].opcions;\n  if (idx >= 0 && idx \u003c ops.length) escoller(ops[idx]);\n});\n\n$('#b-comezar').onclick = () => { i = 0; pintarPregunta(); };\n$('#b-atras').onclick = () => { clearTimeout(avance); if (editando) { editando = false; pintarRevisar(); } else if (i === 0) amosar('inicio'); else { i--; pintarPregunta(); } };\n$('#b-seguinte').onclick = seguinte;\n$('#b-novo').onclick = reiniciar;\n\n$('#b-enviar').onclick = async () => {\n  const b = $('#b-enviar'), er = $('#erro');\n  er.hidden = true; b.disabled = true;\n  b.innerHTML = '\u003cspan class=\"spin\" aria-hidden=\"true\">\u003c/span>Enviando…';\n  try {\n    if (CFG.url) {\n      await fetch(CFG.url, {\n        method: 'POST', mode: 'no-cors',\n        headers: {'Content-Type': 'text/plain;charset=utf-8'},\n        body: JSON.stringify({ id: CFG.id, grupo: grupo, preguntas: CFG.preguntas.map(p => p.texto), respostas: resp })\n      });\n    } else {\n      await new Promise(r => setTimeout(r, 600));\n    }\n    amosar('fin');\n  } catch (e) {\n    er.textContent = 'Non se puideron enviar. Comproba que hai conexión a internet e volve premer «Enviar respostas».';\n    er.hidden = false;\n  } finally {\n    b.disabled = false; b.textContent = 'Enviar respostas';\n  }\n};\n\nreiniciar();\n\u003c/script>\n\u003c/body>\n\u003c/html>\n", "resultados": "\u003c!doctype html>\n\u003chtml lang=\"gl\">\n\u003chead>\n\u003cmeta charset=\"utf-8\">\n\u003cmeta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n\u003ctitle>Resultados · {{TITULO}}\u003c/title>\n\u003clink rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n\u003clink rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n\u003clink rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;700&display=swap\">\n\u003cstyle>\n/* Panel para proxectar: resumo arriba, unha tarxeta-gráfico por pregunta en cuadrícula */\n:root{\n  --paper:#eef1fb; --dot:#d3d9f3; --card:#ffffff; --ink:#14183a; --muted:#565d8a; --track:#e7eaf7;\n  --edge:#14183a; --shadow:#14183a; --pri:#3557ff; --pri-ink:#ffffff; --soft:#e2e7ff; --err:#d6334a;\n  --c1:#3557ff; --c2:#ff6b57; --c3:#f2b705; --c4:#18b386; --c5:#9a74ff; --c6:#ff8fc7; --c7:#2fb6e8; --c8:#8a8f5c;\n  --fd:'Bricolage Grotesque','Arial Black',system-ui,sans-serif;\n  --fb:'Figtree',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;\n  color-scheme:light;\n}\n@media (prefers-color-scheme:dark){:root:not([data-theme=\"light\"]){\n  --paper:#0d1024; --dot:#1c2247; --card:#181d3b; --ink:#eef0ff; --muted:#a6acd6; --track:#252b52;\n  --edge:#4a5394; --shadow:#03040c; --pri:#7088ff; --pri-ink:#0d1024; --soft:#252c5a; --err:#ff7d8f;\n  --c1:#7088ff; --c2:#ff8a78; --c3:#ffd23f; --c4:#3be0b0; --c5:#b79bff; --c6:#ffa6d4; --c7:#5fcdf2; --c8:#c3c88c; color-scheme:dark}}\n:root[data-theme=\"dark\"]{\n  --paper:#0d1024; --dot:#1c2247; --card:#181d3b; --ink:#eef0ff; --muted:#a6acd6; --track:#252b52;\n  --edge:#4a5394; --shadow:#03040c; --pri:#7088ff; --pri-ink:#0d1024; --soft:#252c5a; --err:#ff7d8f;\n  --c1:#7088ff; --c2:#ff8a78; --c3:#ffd23f; --c4:#3be0b0; --c5:#b79bff; --c6:#ffa6d4; --c7:#5fcdf2; --c8:#c3c88c; color-scheme:dark}\n\n*{box-sizing:border-box}\n[hidden]{display:none!important}\nhtml,body{margin:0;min-height:100%}\nbody{background:var(--paper);background-image:radial-gradient(var(--dot) 1.4px,transparent 1.6px);background-size:22px 22px;\n  color:var(--ink);font-family:var(--fb);font-size:16px;line-height:1.5;\n  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));\n  padding-block:max(20px,env(safe-area-inset-top,0px)) max(32px,env(safe-area-inset-bottom,0px))}\n.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:22px}\nh1,h2{font-family:var(--fd);font-weight:800;line-height:1.12;margin:0;text-wrap:balance}\nh1{font-size:clamp(26px,4.4vw,40px)} h2{font-size:19px}\np{margin:0}\n.kicker{font-family:var(--fd);font-weight:600;font-size:13px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}\n.card{background:var(--card);border:2.5px solid var(--edge);border-radius:22px;box-shadow:5px 5px 0 var(--shadow);padding:22px}\n\n/* Acceso */\n.login{max-width:440px;margin:8vh auto 0;display:flex;flex-direction:column;gap:16px}\nlabel{font-weight:700}\ninput[type=password]{font:inherit;font-size:18px;padding:12px 14px;border-radius:14px;border:2.5px solid var(--edge);background:var(--paper);color:var(--ink);width:100%}\ninput:focus-visible,button:focus-visible{outline:3px solid var(--c3);outline-offset:2px}\n.err{color:var(--err);font-weight:700}\n.muted{color:var(--muted);font-size:14px}\n\n.btn{font:inherit;font-family:var(--fd);font-weight:800;font-size:16px;padding:10px 18px;border-radius:14px;cursor:pointer;\n  border:2.5px solid var(--edge);background:var(--pri);color:var(--pri-ink);box-shadow:3px 3px 0 var(--shadow);\n  display:inline-flex;align-items:center;justify-content:center;gap:8px}\n.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--shadow)}\n.btn.ghost{background:var(--card);color:var(--ink)}\n.btn svg{width:18px;height:18px}\n\n/* Cabeceira */\n.head{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;justify-content:space-between}\n.head .tt{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1 1 380px}\n.total{display:flex;align-items:baseline;gap:10px;padding:10px 18px;border-radius:18px;background:var(--c3);color:#1b1a10;border:2.5px solid var(--edge);box-shadow:4px 4px 0 var(--shadow)}\n.total b{font-family:var(--fd);font-size:42px;line-height:1;font-variant-numeric:tabular-nums}\n.total span{font-weight:700}\n.bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center}\n.bar .sp{flex:1}\n.seg{display:inline-flex;border:2.5px solid var(--edge);border-radius:999px;overflow:hidden;background:var(--card)}\n.seg button{font:inherit;font-weight:700;font-size:14px;padding:8px 14px;border:0;background:none;color:var(--ink);cursor:pointer}\n.seg button[aria-pressed=\"true\"]{background:var(--ink);color:var(--card)}\n.chips{display:flex;flex-wrap:wrap;gap:8px}\n.chip{font:inherit;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;border:2px solid var(--edge);background:var(--card);color:var(--ink);cursor:pointer}\n.chip[aria-pressed=\"true\"]{background:var(--pri);color:var(--pri-ink)}\n.chip small{font-weight:500;opacity:.8;margin-left:4px;font-variant-numeric:tabular-nums}\n.auto{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;cursor:pointer}\n.auto input{width:18px;height:18px;accent-color:var(--pri)}\n.estado{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}\n.demo{font-size:14px;padding:10px 14px;border-radius:12px;border:2px dashed var(--edge);background:var(--card);color:var(--muted)}\n\n/* Gráficos */\n.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,520px),1fr));gap:22px}\n.q{display:flex;flex-direction:column;gap:16px;min-width:0}\n.q .qh{display:flex;gap:12px;align-items:flex-start}\n.q .num{flex:none;font-family:var(--fd);font-weight:800;font-size:15px;background:var(--ink);color:var(--card);border-radius:10px;padding:3px 9px}\n.q .qn{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}\n.bars{display:flex;flex-direction:column;gap:12px}\n.br .lab{display:flex;gap:10px;justify-content:space-between;align-items:baseline;font-size:15px;margin-bottom:5px}\n.br .lab .t{min-width:0;overflow-wrap:anywhere}\n.br .lab b{font-family:var(--fd);font-variant-numeric:tabular-nums;white-space:nowrap}\n.br .lab b small{font-family:var(--fb);font-weight:500;color:var(--muted);margin-left:6px}\n.br .tr{height:26px;border-radius:9px;background:var(--track);overflow:hidden;border:2px solid var(--edge)}\n.br .fl{height:100%;border-right:2px solid var(--edge);transition:width .6s cubic-bezier(.2,.8,.2,1)}\n.br.top .lab .t{font-weight:700}\n.let{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:7px;border:2px solid var(--edge);font-family:var(--fd);font-weight:800;font-size:12px;color:#14183a;margin-right:6px;vertical-align:-4px}\n.pie{display:flex;gap:22px;align-items:center;flex-wrap:wrap}\n.pie svg{width:190px;height:190px;flex:none;max-width:100%}\n.pie .leg{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;flex:1;min-width:200px}\n.pie .leg li{display:flex;gap:8px;align-items:baseline;font-size:15px}\n.pie .leg .t{flex:1;min-width:0;overflow-wrap:anywhere}\n.pie .leg b{font-family:var(--fd);font-variant-numeric:tabular-nums;white-space:nowrap}\n.empty{color:var(--muted);font-style:italic}\n@media (prefers-reduced-motion:reduce){*{transition:none!important}}\n\u003c/style>\n\u003c/head>\n\u003cbody>\n\u003cdiv class=\"wrap\">\n  \u003c!-- Acceso -->\n  \u003cform class=\"card login\" id=\"v-login\" autocomplete=\"off\">\n    \u003cp class=\"kicker\">Resultados protexidos\u003c/p>\n    \u003ch1 id=\"l-titulo\" style=\"font-size:28px\">\u003c/h1>\n    \u003clabel for=\"clave\">Contrasinal do profesorado\u003c/label>\n    \u003cinput type=\"password\" id=\"clave\" required>\n    \u003cp class=\"err\" id=\"l-erro\" role=\"alert\" hidden>\u003c/p>\n    \u003cbutton class=\"btn\" type=\"submit\" id=\"l-btn\">Ver resultados\u003c/button>\n    \u003cp class=\"muted\">O contrasinal é o que se escribiu no script da folla de cálculo (CLAVE). Gárdase só mentres esta pestana estea aberta.\u003c/p>\n  \u003c/form>\n\n  \u003c!-- Panel -->\n  \u003cdiv id=\"v-panel\" hidden style=\"display:flex;flex-direction:column;gap:22px\">\n    \u003cp class=\"demo\" id=\"demo\" hidden>Modo proba: esta páxina aínda non está conectada á folla de cálculo. Os datos que ves son inventados.\u003c/p>\n    \u003cdiv class=\"head\">\n      \u003cdiv class=\"tt\">\u003cp class=\"kicker\">Resultados da enquisa\u003c/p>\u003ch1 id=\"p-titulo\">\u003c/h1>\u003c/div>\n      \u003cdiv class=\"total\" aria-live=\"polite\">\u003cb id=\"tot\">0\u003c/b>\u003cspan id=\"tot-l\">respostas\u003c/span>\u003c/div>\n    \u003c/div>\n    \u003cdiv class=\"card bar\">\n      \u003cdiv class=\"chips\" id=\"f-grupos\" role=\"group\" aria-label=\"Filtrar por grupo\">\u003c/div>\n      \u003cspan class=\"sp\">\u003c/span>\n      \u003cdiv class=\"seg\" role=\"group\" aria-label=\"Tipo de gráfico\">\n        \u003cbutton type=\"button\" data-tipo=\"barras\" aria-pressed=\"true\">Barras\u003c/button>\n        \u003cbutton type=\"button\" data-tipo=\"circular\" aria-pressed=\"false\">Circular\u003c/button>\n      \u003c/div>\n      \u003clabel class=\"auto\">\u003cinput type=\"checkbox\" id=\"auto\"> Actualizar cada 15 s\u003c/label>\n      \u003cbutton class=\"btn ghost\" id=\"b-act\" type=\"button\">\u003csvg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">\u003cpath d=\"M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7\"/>\u003c/svg>Actualizar\u003c/button>\n      \u003cbutton class=\"btn ghost\" id=\"b-csv\" type=\"button\">\u003csvg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">\u003cpath d=\"M12 4v11M7 10l5 5 5-5M5 20h14\"/>\u003c/svg>CSV\u003c/button>\n      \u003cspan class=\"estado\" id=\"estado\">\u003c/span>\n    \u003c/div>\n    \u003cdiv class=\"grid\" id=\"grid\">\u003c/div>\n  \u003c/div>\n\u003c/div>\n\n\u003cscript>\nconst CFG = /*CONFIG*/{\"titulo\":\"Como usamos a tecnoloxía?\",\"id\":\"exemplo\",\"url\":\"\",\"grupos\":[\"2.º A\",\"2.º B\"],\"preguntas\":[{\"texto\":\"Cantas horas ao día usas o móbil?\",\"opcions\":[\"Menos de 1 hora\",\"Entre 1 e 3 horas\",\"Entre 3 e 5 horas\",\"Máis de 5 horas\"]},{\"texto\":\"Para que usas máis internet?\",\"opcions\":[\"Redes sociais\",\"Videoxogos\",\"Ver vídeos ou series\",\"Facer deberes\"]}]}/*FIN*/;\n\nconst $ = s => document.querySelector(s);\nconst LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';\nconst NC = 8;\nlet filas = [], filtro = 'todos', tipo = 'barras', clave = '', timer = null;\n\ndocument.title = 'Resultados · ' + CFG.titulo;\n$('#l-titulo').textContent = CFG.titulo;\n$('#p-titulo').textContent = CFG.titulo;\n\nfunction gardarClave(k){ try { sessionStorage.setItem('clave:' + CFG.id, k); } catch(e){} }\nfunction lerClave(){ try { return sessionStorage.getItem('clave:' + CFG.id) || ''; } catch(e){ return ''; } }\nfunction borrarClave(){ try { sessionStorage.removeItem('clave:' + CFG.id); } catch(e){} }\n\nasync function descargar(){\n  if (!CFG.url) return filas;\n  const u = CFG.url + (CFG.url.indexOf('?') >= 0 ? '&' : '?') + new URLSearchParams({accion:'resultados', id:CFG.id, clave:clave}).toString();\n  const r = await fetch(u, {cache:'no-store'});\n  const d = await r.json();\n  if (!d.ok) { const e = new Error(d.erro || 'erro'); e.codigo = d.erro; throw e; }\n  return d.filas || [];\n}\n\nfunction datosDemo(){\n  const out = [];\n  const gs = CFG.grupos.length ? CFG.grupos : [''];\n  const pesos = CFG.preguntas.map(p => p.opcions.map(() => Math.random() + .15));\n  for (let n = 0; n \u003c 47; n++) {\n    const fila = [gs[n % gs.length]];\n    CFG.preguntas.forEach((p, k) => {\n      const w = pesos[k], s = w.reduce((a,b) => a+b, 0); let x = Math.random() * s, j = 0;\n      while (x > w[j] && j \u003c w.length - 1) { x -= w[j]; j++; }\n      fila.push(p.opcions[j]);\n    });\n    out.push(fila);\n  }\n  return out;\n}\n\nasync function entrar(){\n  const e = $('#l-erro'), b = $('#l-btn');\n  e.hidden = true; b.disabled = true; b.textContent = 'Comprobando…';\n  try {\n    filas = await descargar();\n    gardarClave(clave);\n    $('#v-login').hidden = true; $('#v-panel').hidden = false;\n    pintar(); marcarHora();\n  } catch (err) {\n    borrarClave();\n    e.textContent = err.codigo === 'clave' ? 'O contrasinal non é correcto. Revísao e téntao de novo.'\n      : 'Non se puido conectar coa folla de cálculo. Comproba a conexión e que o script estea implementado con acceso para «Calquera».';\n    e.hidden = false;\n  } finally { b.disabled = false; b.textContent = 'Ver resultados'; }\n}\n\nasync function actualizar(){\n  $('#estado').textContent = 'Actualizando…';\n  try { filas = await descargar(); pintar(); marcarHora(); }\n  catch (err) { $('#estado').textContent = 'Non se puido actualizar'; }\n}\nfunction marcarHora(){\n  const d = new Date();\n  $('#estado').textContent = 'Actualizado ás ' + d.toLocaleTimeString('gl-ES', {hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false});\n}\n\nfunction pintarFiltros(){\n  const box = $('#f-grupos'); box.innerHTML = '';\n  const conta = {};\n  filas.forEach(f => { const g = f[0] || 'Sen grupo'; conta[g] = (conta[g] || 0) + 1; });\n  const nomes = CFG.grupos.filter(g => conta[g]).concat(Object.keys(conta).filter(g => CFG.grupos.indexOf(g) \u003c 0));\n  if (filtro !== 'todos' && !conta[filtro]) filtro = 'todos';\n  const opcs = [['todos', 'Todos', filas.length]].concat(nomes.map(g => [g, g, conta[g]]));\n  if (nomes.length \u003c 2) { box.hidden = true; return; }\n  box.hidden = false;\n  opcs.forEach(([v, t, n]) => {\n    const b = document.createElement('button');\n    b.type = 'button'; b.className = 'chip'; b.setAttribute('aria-pressed', v === filtro);\n    b.innerHTML = '\u003cspan>\u003c/span>\u003csmall>\u003c/small>';\n    b.firstChild.textContent = t; b.lastChild.textContent = n;\n    b.onclick = () => { filtro = v; pintar(); };\n    box.appendChild(b);\n  });\n}\n\nfunction pintar(){\n  pintarFiltros();\n  const fs = filtro === 'todos' ? filas : filas.filter(f => (f[0] || 'Sen grupo') === filtro);\n  $('#tot').textContent = fs.length;\n  $('#tot-l').textContent = fs.length === 1 ? 'resposta' : 'respostas';\n  const grid = $('#grid'); grid.innerHTML = '';\n  CFG.preguntas.forEach((p, k) => {\n    const cont = p.opcions.map(o => fs.filter(f => String(f[k + 1]).trim() === o.trim()).length);\n    const n = cont.reduce((a,b) => a + b, 0);\n    const max = Math.max.apply(null, cont);\n    const c = document.createElement('section'); c.className = 'card q';\n    c.innerHTML = '\u003cdiv class=\"qh\">\u003cspan class=\"num\">\u003c/span>\u003cdiv>\u003ch2>\u003c/h2>\u003cp class=\"qn\">\u003c/p>\u003c/div>\u003c/div>\u003cdiv class=\"body\">\u003c/div>';\n    c.querySelector('.num').textContent = 'P' + (k + 1);\n    c.querySelector('h2').textContent = p.texto;\n    c.querySelector('.qn').textContent = n + (n === 1 ? ' resposta' : ' respostas');\n    const body = c.querySelector('.body');\n    if (!n) { body.innerHTML = '\u003cp class=\"empty\">Aínda non hai respostas.\u003c/p>'; }\n    else if (tipo === 'barras') body.appendChild(barras(p, cont, n, max));\n    else body.appendChild(circular(p, cont, n));\n    grid.appendChild(c);\n  });\n}\nconst cor = j => 'var(--c' + (j % NC + 1) + ')';\nconst pct = (v, n) => Math.round(v / n * 100);\nfunction letra(j){ const s = document.createElement('span'); s.className = 'let'; s.style.background = cor(j); s.textContent = LETRAS[j]; return s; }\n\nfunction barras(p, cont, n, max){\n  const w = document.createElement('div'); w.className = 'bars';\n  p.opcions.forEach((o, j) => {\n    const r = document.createElement('div'); r.className = 'br' + (cont[j] === max && max > 0 ? ' top' : '');\n    r.innerHTML = '\u003cdiv class=\"lab\">\u003cspan class=\"t\">\u003c/span>\u003cb>\u003c/b>\u003c/div>\u003cdiv class=\"tr\">\u003cdiv class=\"fl\">\u003c/div>\u003c/div>';\n    const t = r.querySelector('.t'); t.appendChild(letra(j)); t.appendChild(document.createTextNode(o));\n    r.querySelector('b').innerHTML = pct(cont[j], n) + ' %\u003csmall>\u003c/small>';\n    r.querySelector('small').textContent = '(' + cont[j] + ')';\n    const fl = r.querySelector('.fl'); fl.style.background = cor(j); fl.style.width = '0%';\n    if (!cont[j]) fl.style.borderRight = '0';\n    requestAnimationFrame(() => requestAnimationFrame(() => { fl.style.width = (cont[j] / n * 100) + '%'; }));\n    w.appendChild(r);\n  });\n  return w;\n}\n\nfunction circular(p, cont, n){\n  const w = document.createElement('div'); w.className = 'pie';\n  const NS = 'http://www.w3.org/2000/svg';\n  const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('viewBox', '0 0 200 200');\n  svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'Gráfico circular: ' + p.texto);\n  const R = 78, r0 = 46, cx = 100, cy = 100;\n  let a = -Math.PI / 2;\n  const pt = (rad, ang) => [cx + rad * Math.cos(ang), cy + rad * Math.sin(ang)];\n  cont.forEach((v, j) => {\n    if (!v) return;\n    const fr = v / n;\n    if (fr >= 0.9999) {\n      const c1 = document.createElementNS(NS, 'circle');\n      c1.setAttribute('cx', cx); c1.setAttribute('cy', cy); c1.setAttribute('r', (R + r0) / 2);\n      c1.setAttribute('fill', 'none'); c1.setAttribute('stroke', cor(j)); c1.setAttribute('stroke-width', R - r0);\n      svg.appendChild(c1); return;\n    }\n    const b = a + fr * Math.PI * 2, big = fr > .5 ? 1 : 0;\n    const [x1,y1] = pt(R,a), [x2,y2] = pt(R,b), [x3,y3] = pt(r0,b), [x4,y4] = pt(r0,a);\n    const path = document.createElementNS(NS, 'path');\n    path.setAttribute('d', `M${x1} ${y1}A${R} ${R} 0 ${big} 1 ${x2} ${y2}L${x3} ${y3}A${r0} ${r0} 0 ${big} 0 ${x4} ${y4}Z`);\n    path.setAttribute('fill', cor(j)); path.setAttribute('stroke', 'var(--card)'); path.setAttribute('stroke-width', '2.5');\n    svg.appendChild(path);\n    a = b;\n  });\n  const ring = document.createElementNS(NS, 'circle');\n  ring.setAttribute('cx', cx); ring.setAttribute('cy', cy); ring.setAttribute('r', R + 1.5);\n  ring.setAttribute('fill', 'none'); ring.setAttribute('stroke', 'var(--edge)'); ring.setAttribute('stroke-width', '2.5');\n  svg.appendChild(ring);\n  const tx = document.createElementNS(NS, 'text');\n  tx.setAttribute('x', cx); tx.setAttribute('y', cy + 9); tx.setAttribute('text-anchor', 'middle');\n  tx.setAttribute('fill', 'var(--ink)'); tx.setAttribute('style', 'font:800 26px var(--fd)'); tx.textContent = n;\n  svg.appendChild(tx);\n  w.appendChild(svg);\n  const ul = document.createElement('ul'); ul.className = 'leg';\n  p.opcions.forEach((o, j) => {\n    const li = document.createElement('li');\n    li.appendChild(letra(j));\n    const t = document.createElement('span'); t.className = 't'; t.textContent = o; li.appendChild(t);\n    const b = document.createElement('b'); b.textContent = pct(cont[j], n) + ' % (' + cont[j] + ')'; li.appendChild(b);\n    ul.appendChild(li);\n  });\n  w.appendChild(ul);\n  return w;\n}\n\nfunction csv(){\n  const esc = v => '\"' + String(v == null ? '' : v).replace(/\"/g, '\"\"') + '\"';\n  const linhas = [['Grupo'].concat(CFG.preguntas.map((p, k) => 'P' + (k + 1) + '. ' + p.texto))].concat(filas);\n  const txt = '﻿' + linhas.map(l => l.map(esc).join(';')).join('\\r\\n');\n  const a = document.createElement('a');\n  a.href = URL.createObjectURL(new Blob([txt], {type:'text/csv;charset=utf-8'}));\n  a.download = 'resultados-' + CFG.id + '.csv';\n  document.body.appendChild(a); a.click(); a.remove();\n}\n\ndocument.querySelectorAll('.seg button').forEach(b => b.onclick = () => {\n  tipo = b.dataset.tipo;\n  document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', x === b));\n  pintar();\n});\n$('#auto').onchange = e => { clearInterval(timer); if (e.target.checked) timer = setInterval(actualizar, 15000); };\n$('#b-act').onclick = actualizar;\n$('#b-csv').onclick = csv;\n$('#v-login').onsubmit = e => { e.preventDefault(); clave = $('#clave').value; entrar(); };\n\nif (!CFG.url) {\n  filas = datosDemo();\n  $('#demo').hidden = false; $('#v-login').hidden = true; $('#v-panel').hidden = false;\n  pintar(); marcarHora();\n} else {\n  clave = lerClave();\n  if (clave) entrar(); else $('#clave').focus();\n}\n\u003c/script>\n\u003c/body>\n\u003c/html>\n", "exemplo": "Cantas horas ao día usas o móbil fóra do instituto?\nA. Menos de 1 hora\nB. Entre 1 e 3 horas\nC. Entre 3 e 5 horas\nD. Máis de 5 horas\nE. Non teño móbil\n\nPara que usas máis internet?\nA. Redes sociais\nB. Videoxogos\nC. Ver vídeos ou series\nD. Facer deberes ou estudar\nE. Falar coa familia e amizades\n\nQue rede social usas máis?\nA. Instagram\nB. TikTok\nC. YouTube\nD. WhatsApp\nE. Ningunha\n\nOnde fas os deberes que necesitan ordenador?\nA. Na casa, co meu ordenador\nB. Na casa, cun ordenador compartido\nC. Na biblioteca ou no instituto\nD. Fágoos co móbil\n\nQue che parece máis útil para aprender Tecnoloxía?\nA. Construír proxectos no taller\nB. Programar e facer simulacións\nC. Ver vídeos e explicacións\nD. Traballar en equipo\nE. Facer exercicios no caderno\n\nUsaches algunha vez unha intelixencia artificial (ChatGPT, Gemini, Claude...) para os estudos?\nA. Nunca\nB. Algunha vez\nC. Unha vez á semana\nD. Case todos os días\n\nComo te sentes cando tes que falar en público na clase?\nA. Moi tranquilo/a\nB. Un pouco nervioso/a\nC. Bastante nervioso/a\nD. Prefiro non facelo\n"};
+const PLANTILLAS = window.PLANTILLAS || {formulario:'', resultados:'', exemplo:''};
+const $ = s => document.querySelector(s);
+const LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+let banco = [];            // [{texto, opcions:[]}]
+let sel = new Map();       // índice pregunta -> Set de índices de opción
+
+// ---------- Lectura do formato AIKEN ----------
+function lerAiken(txt){
+  const linhas = String(txt).replace(/^﻿/, '').replace(/\r\n?/g, '\n').split('\n');
+  const out = [], avisos = [];
+  const reOpc = /^(?:([A-Za-z])\s*[.)]|[-*•])\s+(.+)$/;
+  const reAns = /^ANSWER\s*:/i;
+  let cur = null;
+  const pechar = () => { if (cur) { out.push(cur); cur = null; } };
+  linhas.forEach(raw => {
+    const l = raw.trim();
+    if (!l) { if (cur && cur.opcions.length) pechar(); return; }
+    if (reAns.test(l)) { pechar(); return; }
+    const m = l.match(reOpc);
+    if (m && cur) { cur.opcions.push(m[2].trim()); return; }
+    if (cur && cur.opcions.length) pechar();
+    const t = l.replace(/^\d+\s*[.)-]\s*/, '');
+    if (cur) cur.texto += ' ' + t; else cur = {texto: t, opcions: []};
+  });
+  pechar();
+  const validas = out.filter((p, k) => {
+    if (p.opcions.length < 2) { avisos.push('Ignorouse «' + recortar(p.texto, 60) + '» porque ten menos de dúas opcións.'); return false; }
+    return true;
+  });
+  return {preguntas: validas, avisos};
+}
+const recortar = (s, n) => s.length > n ? s.slice(0, n - 1) + '…' : s;
+
+// ---------- Carga de texto ----------
+function cargarTexto(txt, nome){
+  const r = lerAiken(txt);
+  banco = r.preguntas; sel = new Map();
+  $('#arq-nome').textContent = nome || 'Texto pegado';
+  $('#parsed').innerHTML = banco.length
+    ? 'Atopáronse <b>' + banco.length + '</b> preguntas, con entre <b>' + Math.min.apply(null, banco.map(p => p.opcions.length)) + '</b> e <b>' + Math.max.apply(null, banco.map(p => p.opcions.length)) + '</b> opcións.'
+    : (txt.trim() ? 'Non se atopou ningunha pregunta. Revisa que as opcións empecen por «A.», «B.»…' : '');
+  $('#warns').innerHTML = '';
+  r.avisos.slice(0, 6).forEach(a => { const p = document.createElement('p'); p.textContent = a; $('#warns').appendChild(p); });
+  if (banco.length) {
+    const np = $('#nPreg'); if (+np.value > banco.length) np.value = banco.length;
+  }
+  pintarLista(); comprobar();
+}
+const entrada = $('#arquivo');
+$('#drop').onclick = () => entrada.click();
+$('#drop').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); entrada.click(); } };
+entrada.onchange = () => { if (entrada.files[0]) lerArquivo(entrada.files[0]); entrada.value = ''; };
+['dragenter','dragover'].forEach(ev => $('#drop').addEventListener(ev, e => { e.preventDefault(); $('#drop').classList.add('over'); }));
+['dragleave','drop'].forEach(ev => $('#drop').addEventListener(ev, e => { e.preventDefault(); $('#drop').classList.remove('over'); }));
+$('#drop').addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) lerArquivo(f); });
+function lerArquivo(f){
+  const fr = new FileReader();
+  fr.onload = () => { $('#texto').value = fr.result; cargarTexto(fr.result, f.name); };
+  fr.readAsText(f, 'UTF-8');
+}
+$('#b-exemplo').onclick = () => { $('#texto').value = PLANTILLAS.exemplo; cargarTexto(PLANTILLAS.exemplo, 'exemplo-preguntas.txt'); };
+$('#b-baixar-ex').onclick = () => baixar('exemplo-preguntas.txt', PLANTILLAS.exemplo, 'text/plain');
+$('#b-pegar').onclick = () => { $('#pegar-box').hidden = false; $('#texto').focus(); };
+let tmo; $('#texto').oninput = () => { clearTimeout(tmo); tmo = setTimeout(() => cargarTexto($('#texto').value, 'Texto pegado'), 350); };
+
+// ---------- Selección ----------
+const nPreg = () => Math.max(1, parseInt($('#nPreg').value, 10) || 1);
+const nOpc = () => Math.max(2, parseInt($('#nOpc').value, 10) || 2);
+
+function pintarLista(){
+  const ul = $('#lista'); ul.innerHTML = '';
+  if (!banco.length) { ul.innerHTML = '<li class="vacio">Carga un arquivo no paso 2 para ver aquí as preguntas.</li>'; return; }
+  const M = nOpc();
+  banco.forEach((p, k) => {
+    const on = sel.has(k), curta = p.opcions.length < M;
+    const li = document.createElement('li');
+    li.className = 'qi' + (on ? ' on' : '') + (curta ? ' off' : '');
+    const qt = document.createElement('label'); qt.className = 'qt';
+    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = on; cb.disabled = curta; cb.id = 'q' + k;
+    cb.onchange = () => alternarPregunta(k, cb);
+    const n = document.createElement('span'); n.className = 'qn'; n.textContent = 'P' + (k + 1);
+    const t = document.createElement('span'); t.textContent = p.texto;
+    qt.append(cb, n, t); li.appendChild(qt);
+    if (curta) {
+      const no = document.createElement('p'); no.className = 'note';
+      no.textContent = 'Só ten ' + p.opcions.length + ' opcións e pediches ' + M + '.'; li.appendChild(no);
+    } else if (on) {
+      const s = sel.get(k);
+      const ops = document.createElement('div'); ops.className = 'ops';
+      p.opcions.forEach((o, j) => {
+        const lb = document.createElement('label'); lb.className = 'op';
+        const c = document.createElement('input'); c.type = 'checkbox'; c.checked = s.has(j); c.id = 'q' + k + 'o' + j;
+        c.onchange = () => alternarOpcion(k, j, c);
+        const lt = document.createElement('span'); lt.className = 'lt'; lt.textContent = LETRAS[j] + '.';
+        const ot = document.createElement('span'); ot.textContent = o;
+        lb.append(c, lt, ot); ops.appendChild(lb);
+      });
+      li.appendChild(ops);
+      const cn = document.createElement('p'); cn.className = 'opn';
+      cn.textContent = s.size + ' de ' + M + ' opcións marcadas'; li.appendChild(cn);
+    } else {
+      const cn = document.createElement('p'); cn.className = 'opn';
+      cn.textContent = p.opcions.length + ' opcións dispoñibles'; li.appendChild(cn);
+    }
+    ul.appendChild(li);
+  });
+}
+function alternarPregunta(k, cb){
+  if (cb.checked) {
+    if (sel.size >= nPreg()) { cb.checked = false; aviso('Xa marcaches ' + nPreg() + ' preguntas. Desmarca unha ou sube o número no paso 3.'); return; }
+    sel.set(k, new Set(banco[k].opcions.slice(0, nOpc()).map((_, j) => j)));
+  } else sel.delete(k);
+  pintarLista(); comprobar();
+  const el = document.getElementById('q' + k); if (el) el.focus();
+}
+function alternarOpcion(k, j, c){
+  const s = sel.get(k);
+  if (c.checked) {
+    if (s.size >= nOpc()) { c.checked = false; aviso('Esta pregunta xa ten ' + nOpc() + ' opcións. Desmarca outra primeiro.'); return; }
+    s.add(j);
+  } else s.delete(j);
+  pintarLista(); comprobar();
+  const el = document.getElementById('q' + k + 'o' + j); if (el) el.focus();
+}
+$('#b-primeiras').onclick = () => {
+  sel = new Map(); const M = nOpc();
+  banco.forEach((p, k) => { if (sel.size < nPreg() && p.opcions.length >= M) sel.set(k, new Set(p.opcions.slice(0, M).map((_, j) => j))); });
+  pintarLista(); comprobar();
+};
+$('#b-limpar').onclick = () => { sel = new Map(); pintarLista(); comprobar(); };
+['nPreg','nOpc'].forEach(id => $('#' + id).addEventListener('input', () => {
+  // ao cambiar o número de opcións, axústase a selección de cada pregunta
+  const M = nOpc();
+  for (const [k, s] of sel) {
+    if (banco[k].opcions.length < M) { sel.delete(k); continue; }
+    const arr = [...s].sort((a,b) => a-b);
+    if (arr.length > M) sel.set(k, new Set(arr.slice(0, M)));
+  }
+  pintarLista(); comprobar();
+}));
+
+// ---------- Comprobacións ----------
+function slug(s){
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+}
+let identManual = false;
+$('#titulo').addEventListener('input', () => { if (!identManual) $('#ident').value = slug($('#titulo').value); comprobar(); gardarPrefs(); });
+$('#ident').addEventListener('input', () => { identManual = !!$('#ident').value; comprobar(); });
+$('#ident').addEventListener('blur', () => { $('#ident').value = slug($('#ident').value); comprobar(); });
+['grupos','url'].forEach(id => $('#' + id).addEventListener('input', () => { comprobar(); gardarPrefs(); }));
+
+function config(){
+  const preguntas = [...sel.keys()].sort((a,b) => a-b).map(k => ({
+    texto: banco[k].texto,
+    opcions: [...sel.get(k)].sort((a,b) => a-b).map(j => banco[k].opcions[j])
+  }));
+  return {
+    titulo: $('#titulo').value.trim(),
+    id: slug($('#ident').value) || slug($('#titulo').value),
+    url: $('#url').value.trim(),
+    grupos: $('#grupos').value.split(',').map(s => s.trim()).filter(Boolean),
+    preguntas
+  };
+}
+function comprobar(){
+  const c = config(), N = nPreg(), M = nOpc();
+  $('#counter').textContent = sel.size + ' / ' + N + ' preguntas';
+  $('#counter').classList.toggle('okc', sel.size === N);
+  const incompletas = [...sel.values()].filter(s => s.size !== M).length;
+  const urlOk = /^https:\/\/script\.google(usercontent)?\.com\/.+\/exec(\?.*)?$/.test(c.url);
+  const items = [
+    [c.titulo ? 'ok' : 'bad', c.titulo ? 'Título escrito' : 'Falta o título'],
+    [c.id ? 'ok' : 'bad', c.id ? 'Pestana: ' + c.id : 'Falta o nome da pestana'],
+    [banco.length ? 'ok' : 'bad', banco.length ? banco.length + ' preguntas no arquivo' : 'Falta cargar as preguntas'],
+    [sel.size === N ? 'ok' : 'bad', sel.size === N ? N + ' preguntas marcadas' : 'Marca ' + N + ' preguntas (levas ' + sel.size + ')'],
+    [sel.size && !incompletas ? 'ok' : 'bad', incompletas ? incompletas + ' pregunta(s) sen ' + M + ' opcións marcadas' : M + ' opcións en cada pregunta'],
+    [c.url ? (urlOk ? 'ok' : 'bad') : 'warn', !c.url ? 'Sen enderezo do script: modo proba' : urlOk ? 'Enderezo do script correcto' : 'O enderezo debe empezar por https://script.google.com e rematar en /exec'],
+    [c.grupos.length ? 'ok' : 'warn', c.grupos.length ? c.grupos.length + ' grupos para escoller' : 'Sen grupos: non se preguntará']
+  ];
+  const ul = $('#check'); ul.innerHTML = '';
+  items.forEach(([e, t]) => { const li = document.createElement('li'); li.className = e; li.innerHTML = '<i></i><span></span>'; li.firstChild.textContent = e === 'ok' ? '✓' : e === 'warn' ? '!' : '×'; li.lastChild.textContent = t; ul.appendChild(li); });
+  const listo = items.every(([e]) => e !== 'bad');
+  ['#b-form','#b-res','#v-form','#v-res'].forEach(b => $(b).disabled = !listo);
+  $('#nomes').innerHTML = listo ? 'Arquivos: <span class="code"></span> e <span class="code"></span>' : 'Completa os puntos marcados con × para descargar.';
+  if (listo) { const s = $('#nomes').querySelectorAll('.code'); s[0].textContent = 'formulario-' + c.id + '.html'; s[1].textContent = 'resultados-' + c.id + '.html'; }
+  return listo;
+}
+
+// ---------- Xeración ----------
+function encher(plantilla, cfg){
+  const json = JSON.stringify(cfg).replace(/</g, '\\u003c');
+  const esc = cfg.titulo.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  return plantilla
+    .replace(/\/\*CONFIG\*\/[\s\S]*?\/\*FIN\*\//, () => '/*CONFIG*/' + json + '/*FIN*/')
+    .replace(/\{\{TITULO\}\}/g, () => esc);
+}
+function baixar(nome, contido, tipo){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([contido], {type: (tipo || 'text/html') + ';charset=utf-8'}));
+  a.download = nome; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  aviso('Descargado: ' + nome);
+}
+function ver(contido){
+  const u = URL.createObjectURL(new Blob([contido], {type:'text/html;charset=utf-8'}));
+  const w = window.open(u, '_blank');
+  if (!w) aviso('O navegador bloqueou a xanela nova. Permite as xanelas emerxentes para esta páxina.');
+}
+$('#b-form').onclick = () => { if (comprobar()) { const c = config(); baixar('formulario-' + c.id + '.html', encher(PLANTILLAS.formulario, c)); } };
+$('#b-res').onclick = () => { if (comprobar()) { const c = config(); baixar('resultados-' + c.id + '.html', encher(PLANTILLAS.resultados, c)); } };
+$('#v-form').onclick = () => { if (comprobar()) ver(encher(PLANTILLAS.formulario, config())); };
+$('#v-res').onclick = () => { if (comprobar()) ver(encher(PLANTILLAS.resultados, config())); };
+
+let tt; function aviso(t){ const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(tt); tt = setTimeout(() => el.hidden = true, 3200); }
+
+// Lembra o enderezo do script e os grupos neste navegador
+function gardarPrefs(){ try { localStorage.setItem('xerador:prefs', JSON.stringify({url: $('#url').value, grupos: $('#grupos').value})); } catch(e){} }
+try { const p = JSON.parse(localStorage.getItem('xerador:prefs') || 'null'); if (p) { $('#url').value = p.url || ''; $('#grupos').value = p.grupos || ''; } } catch(e){}
+if (!$('#grupos').value) $('#grupos').value = '2.º A, 2.º B, 2.º C';
+
+pintarLista(); comprobar();
+</script>
+</body>
+</html>
